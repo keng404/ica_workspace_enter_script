@@ -1,6 +1,10 @@
 # Synopsis
 
-Script will try to enter/re-start a workspace in ICA programmatically.
+Script will try to enter/re-start a workspace in Illumina Connected Analytics (ICA) programmatically.
+
+This is demo code and should not be considered official code from Illumina.
+
+Currently this allows for users to keep workspaces active (i.e. permanent workspaces) for their activity within ICA.
 
 ## Command line usage
 
