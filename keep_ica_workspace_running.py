@@ -8,9 +8,10 @@ import os
 import argparse
 import base64
 import sys
+import time 
 ### Use assertion to throw error if URL cannot be loaded or found (i.e. sends a 400 or 500 response)
 def handle_response(response):
-    assert response.status < 400 and response.status >= 200, f"URL visited: {response.url}  Status code: {response.status} >= 400"
+    assert (response.status < 400 and response.status >= 200) or response.status == 500, f"URL visited: {response.url}  Status code: {response.status} >= 400"
 
 # STEP 1: generate psToken from username and password
 def generate_ps_token(auth_object):
@@ -38,7 +39,7 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
     context.grant_permissions(["clipboard-write"])
     page = context.new_page()
     # sign into domain --- platform home
-    page.on("response", handle_response)
+    #page.on("response", handle_response)
     print(f"Logging into {auth_object['domain_name']} domain")
     page.goto(f"https://platform.login.illumina.com/platform-services-manager/?rURL=https://{auth_object['domain_name']}.login.illumina.com/platform-home/&redirectMethod=GET&clientId=ps-home")
     page.locator("#login").click()
@@ -51,16 +52,19 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
     page.get_by_role("link", name="Illumina Connected Analytics", exact=True).click()
     page.get_by_text("Cookies", exact=True).click()
     page.get_by_role("button", name="Accept and close").click()
+
     #page.goto(f"{os.environ['ICA_ROOT_URL']}/ica/projects")
 
     # enter into project context
     print(f"Entering into the ICA project {auth_object['project_name']}")
     ## by project id
     if auth_object['project_id'] is not None:
-        page.on("response", handle_response)
+        #page.on("response", handle_response)
         page.goto(f"{os.environ['ICA_ROOT_URL']}/ica/projects/{auth_object['project_id']}")
     else:
         page.locator("#btn-cardstack-table").click()
+        time.sleep(1)
+        page.wait_for_load_state() # the promise resolves after "load" event.
         found_project = page.get_by_role("cell", name=f"{auth_object['project_name']}",exact=True).locator("div").count() > 0
         if found_project is True:
             page.get_by_role("cell", name=f"{auth_object['project_name']}").locator("div").dblclick()
@@ -82,9 +86,10 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
         else:
             raise ValueError(f"Could not find the project: {auth_object['project_name']}")
     ### enter workspaces of project
-    page.on("response", handle_response)
-    page.goto(f"{os.environ['ICA_ROOT_URL']}/ica/projects/{auth_object['project_id']}/projectWorkspaces")
+    #page.on("response", handle_response)
+    page.goto(f"{os.environ['ICA_ROOT_URL']}/ica/projects/{auth_object['project_id']}/workspaces")
     page.locator("#cardstackandmasterdetaillayout-toggle-TABLE").get_by_role("button").click()
+    time.sleep(1)
     found_workspace = page.get_by_role("cell",name=f"{auth_object['workspace_name']}",exact=True).count() > 0
     if found_workspace is True:
         page.get_by_role("cell",name=f"{auth_object['workspace_name']}",exact=True).click(click_count=2)
