@@ -106,9 +106,13 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
             print(f"Logged into running workspace {auth_object['workspace_name']}")
         elif workspace_status == "Stopped":
             ## keep re-start a stopped workspace
-            page.get_by_role("button", name=" Start Workspace").click()
+            time.sleep(1)
+            page.get_by_role("button", name=" Start Workspace").click(click_count=3)
+            time.sleep(3)
             page.get_by_role("button", name=" Back").click()
             print(f"Restarted workspace {auth_object['workspace_name']}\nYou may need to wait a few minutes before entering into it.")
+        elif workspace_status == "Starting":
+            print(f"Workspace {auth_object['workspace_name']} is still restarting\nYou may need to wait a few minutes before entering into it.")
         else:
             raise ValueError(f"Not sure what to do with workspace {auth_object['workspace_name']}.\nIt has status of {workspace_status}")
     else:
