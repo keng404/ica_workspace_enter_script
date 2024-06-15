@@ -109,8 +109,17 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
             time.sleep(1)
             page.get_by_role("button", name=" Start Workspace").click(click_count=3)
             time.sleep(3)
+            #### let's check the workspace has restarted
+            page.get_by_label("Details").get_by_text("Details").click(click_count=2)
+            page.get_by_label("Status").click(click_count=2)
+            ### only valid for MacOs -- need to adapt for windows
+            page.locator(".v-panel-content").press("Meta+c")
+            workspace_status = page.evaluate("navigator.clipboard.readText()")
             page.get_by_role("button", name=" Back").click()
-            print(f"Restarted workspace {auth_object['workspace_name']}\nYou may need to wait a few minutes before entering into it.")
+            if workspace_status == "Starting":
+                print(f"Restarted workspace {auth_object['workspace_name']}\nYou may need to wait a few minutes before entering into it.")
+            else:
+                raise ValueError(f"Could not restart workspace workspace {auth_object['workspace_name']}. Not sure what to do with it.\nIt has status of {workspace_status}")
         elif workspace_status == "Starting":
             print(f"Workspace {auth_object['workspace_name']} is still restarting\nYou may need to wait a few minutes before entering into it.")
         else:
