@@ -9,6 +9,10 @@ import argparse
 import base64
 import sys
 import time 
+import logging
+
+logging.basicConfig(format='[%(asctime)s] - %(message)s', datefmt='%d-%b-%y %H:%M:%S',level=logging.DEBUG)
+
 ### Use assertion to throw error if URL cannot be loaded or found (i.e. sends a 400 or 500 response)
 def handle_response(response):
     assert (response.status < 400 and response.status >= 200) or response.status == 500, f"URL visited: {response.url}  Status code: {response.status} >= 400"
@@ -40,7 +44,7 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
     page = context.new_page()
     # sign into domain --- platform home
     #page.on("response", handle_response)
-    print(f"Logging into {auth_object['domain_name']} domain")
+    logging.debug(f"Logging into {auth_object['domain_name']} domain")
     page.goto(f"https://platform.login.illumina.com/platform-services-manager/?rURL=https://{auth_object['domain_name']}.login.illumina.com/platform-home/&redirectMethod=GET&clientId=ps-home")
     page.locator("#login").click()
     page.locator("#login").fill(f"{auth_object['username']}")
@@ -48,7 +52,7 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
     page.locator("input[name=\"password\"]").fill(f"{auth_object['password']}")
     page.get_by_role("button", name="Sign In").click()
     # click on ICA card
-    print(f"Entering into ICA")
+    logging.debug(f"Entering into ICA")
     page.get_by_role("link", name="Illumina Connected Analytics", exact=True).click()
     page.get_by_text("Cookies", exact=True).click()
     page.get_by_role("button", name="Accept and close").click()
@@ -56,7 +60,7 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
     #page.goto(f"{os.environ['ICA_ROOT_URL']}/ica/projects")
 
     # enter into project context
-    print(f"Entering into the ICA project {auth_object['project_name']}")
+    logging.debug(f"Entering into the ICA project {auth_object['project_name']}")
     ## by project id
     if auth_object['project_id'] is not None:
         #page.on("response", handle_response)
@@ -69,7 +73,7 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
         if found_project is True:
             page.get_by_role("cell", name=f"{auth_object['project_name']}").locator("div").dblclick()
             ## Grabbing project URN from project details tab
-            print(f"Grabbing project URN {auth_object['project_name']} to get project id")
+            logging.debug(f"Grabbing project URN {auth_object['project_name']} to get project id")
             page.get_by_role("button", name="Project Settings").click()
             page.get_by_role("link", name="Details").click()
             page.get_by_label("URN").click(click_count=3)
@@ -77,7 +81,7 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
             page.get_by_label("URN").press("Meta+c")
             project_urn = page.evaluate("navigator.clipboard.readText()")
             if project_urn != "":
-                print(f"Found project URN {project_urn}")
+                logging.debug(f"Found project URN {project_urn}")
                 project_urn_split = project_urn.split(':')
                 project_metadata_split = project_urn_split[len(project_urn_split)-1].split("#")
                 auth_object['project_id'] = project_metadata_split[0]
@@ -98,12 +102,12 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
         ### only valid for MacOs -- need to adapt for windows
         page.locator(".v-panel-content").press("Meta+c")
         workspace_status = page.evaluate("navigator.clipboard.readText()")
-        print(f"Workspace Name: {auth_object['workspace_name']} Status: {workspace_status}")
+        logging.debug(f"Workspace Name: {auth_object['workspace_name']} Status: {workspace_status}")
         if workspace_status == "Running":
             ## keep running workspace running
             page.get_by_role("button", name=" Back").click()
             page.get_by_role("button", name=" Keep running").click()
-            print(f"Logged into running workspace {auth_object['workspace_name']}")
+            logging.debug(f"Logged into running workspace {auth_object['workspace_name']}")
         elif workspace_status == "Stopped":
             ## keep re-start a stopped workspace
             time.sleep(1)
@@ -117,25 +121,25 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
             workspace_status = page.evaluate("navigator.clipboard.readText()")
             page.get_by_role("button", name=" Back").click()
             if workspace_status == "Starting":
-                print(f"Restarted workspace {auth_object['workspace_name']}\nYou may need to wait a few minutes before entering into it.")
+                logging.debug(f"Restarted workspace {auth_object['workspace_name']}\nYou may need to wait a few minutes before entering into it.")
             else:
                 raise ValueError(f"Could not restart workspace workspace {auth_object['workspace_name']}. Not sure what to do with it.\nIt has status of {workspace_status}")
         elif workspace_status == "Starting":
-            print(f"Workspace {auth_object['workspace_name']} is still restarting\nYou may need to wait a few minutes before entering into it.")
+            logging.debug(f"Workspace {auth_object['workspace_name']} is still restarting\nYou may need to wait a few minutes before entering into it.")
         else:
             raise ValueError(f"Not sure what to do with workspace {auth_object['workspace_name']}.\nIt has status of {workspace_status}")
     else:
         raise ValueError(f"Could not find the workspace: {auth_object['workspace_name']} in the project {auth_object['project_id']}")
     # ---------------------
     ### sign out of ICA
-    print(f"Logging out of ICA")
+    logging.debug(f"Logging out of ICA")
     page.locator("#btn-usermenu").click()
     page.get_by_role("option", name="Sign out").click()
     ### browser and admin steps
     context.clear_cookies()
     context.close()
     browser.close()
-    return print(f"Finished work!")
+    return logging.debug(f"Finished work!")
 
 #################################
 def main():
