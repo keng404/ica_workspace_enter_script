@@ -10,6 +10,7 @@ import base64
 import sys
 import time 
 import logging
+import platform
 
 logging.basicConfig(format='[%(asctime)s] - %(message)s', datefmt='%d-%b-%y %H:%M:%S',level=logging.DEBUG)
 
@@ -36,7 +37,7 @@ def generate_ps_token(auth_object):
         raise ValueError(f"Could not generate psToken for the following URL: https://{auth_object['domain_name']}.login.illumina.com")
     return token 
 ## STEP 2, log into ICA, navigate to project, Bench -> Workspaces, identify workspace of interest and enter it.
-def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
+def enter_workspace(playwright: Playwright,auth_object,headless_mode,operating_system) -> None:
     browser = playwright.chromium.launch(headless=headless_mode)
     context = browser.new_context()
     context.grant_permissions(["clipboard-read"])
@@ -77,8 +78,11 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
             page.get_by_role("button", name="Project Settings").click()
             page.get_by_role("link", name="Details").click()
             page.get_by_label("URN").click(click_count=3)
-            ### only valid for MacOs -- need to adapt for windows
-            page.get_by_label("URN").press("Meta+c")
+            if operating_system == "Mac":
+                ### only valid for MacOs -- need to adapt for windows
+                page.get_by_label("URN").press("Meta+c")
+            else:
+                page.get_by_label("URN").press("Control+c")
             project_urn = page.evaluate("navigator.clipboard.readText()")
             if project_urn != "":
                 logging.debug(f"Found project URN {project_urn}")
@@ -99,8 +103,11 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
         page.get_by_role("cell",name=f"{auth_object['workspace_name']}",exact=True).click(click_count=2)
         page.get_by_label("Details").get_by_text("Details").click(click_count=2)
         page.get_by_label("Status").click(click_count=2)
-        ### only valid for MacOs -- need to adapt for windows
-        page.locator(".v-panel-content").press("Meta+c")
+        if operating_system == "Mac":
+            ### only valid for MacOs -- need to adapt for windows
+            page.locator(".v-panel-content").press("Meta+c")
+        else:
+            page.locator(".v-panel-content").press("Control+c")
         workspace_status = page.evaluate("navigator.clipboard.readText()")
         logging.debug(f"Workspace Name: {auth_object['workspace_name']} Status: {workspace_status}")
         if workspace_status == "Running":
@@ -116,8 +123,11 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode) -> None:
             #### let's check the workspace has restarted
             page.get_by_label("Details").get_by_text("Details").click(click_count=2)
             page.get_by_label("Status").click(click_count=2)
-            ### only valid for MacOs -- need to adapt for windows
-            page.locator(".v-panel-content").press("Meta+c")
+            if operating_system == "Mac":
+                ### only valid for MacOs -- need to adapt for windows
+                page.locator(".v-panel-content").press("Meta+c")
+            else:
+                page.locator(".v-panel-content").press("Control+c")
             workspace_status = page.evaluate("navigator.clipboard.readText()")
             page.get_by_role("button", name=" Back").click()
             if workspace_status == "Starting":
@@ -168,9 +178,17 @@ def main():
     if ps_token is None:
         raise ValueError("Username password combination is incorrect")
     else:
+        operating_system = "Mac"
+        if platform.system() in ["Windows"]:
+            operating_system = "Windows"
+        elif platform.system() in ["Linux"]:
+            operating_system = "Linux"
+        else:
+            operating_system = "Mac"
+
         ############ run automation to enter ICA workspace via playwright process
         with sync_playwright() as playwright:
-            enter_workspace(playwright,auth_object,args.interactive_mode)
+            enter_workspace(playwright,auth_object,args.interactive_mode,operating_system)
 #################
 if __name__ == '__main__':
     main()

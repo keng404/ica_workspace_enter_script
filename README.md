@@ -6,7 +6,7 @@ This is demo code and should not be considered official code from Illumina.
 
 Currently this allows for users to keep workspaces active (i.e. permanent workspaces) for their activity within ICA.
 
-You can also try running the script in the docker image ```keng404/ica_workspace_enter_script:0.0.1```.
+You can also try running the script in the docker image ```keng404/ica_workspace_enter_script:0.0.2```.
 
 ## Command line usage
 
@@ -16,13 +16,10 @@ python3 keep_ica_workspace_running.py --domain_name {DOMAIN_NAME} --username {US
 
 ### Additional notes
 
-- Only works on MacOS for now.
 - Script will enter running workspace and re-start stopped workspace.
 - ```interactive_mode``` mode flag can be toggled on/off --- this flag turns off headless mode, which is nice if you want to see how the script is navigating in the browser.
 - No checks are done for invalid workspace names. You'll probably encounter a timeout error (30s) if script does not complete.
 - Either ```project_name``` or ```project_id``` can be provided.
-- Need to add ``` Ctrl + C ``` to get the copy-to-clipboard functionality in Linux and Windows OS.
-  - Used in grabbing project URN and workspace status  
 
 # install python modules
 
@@ -30,7 +27,9 @@ python3 keep_ica_workspace_running.py --domain_name {DOMAIN_NAME} --username {US
 pip install -r requirements.txt
 ```
 
-# Playwright setup on MacOS
+# Playwright setup on MacOS -- you will need to find the default
+# python installation path for Linux and Windows and adapt the
+# PATH variable accordingly
 
 ## install and setup playwright
 
