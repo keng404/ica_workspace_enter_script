@@ -67,12 +67,15 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode,operating_s
         #page.on("response", handle_response)
         page.goto(f"{os.environ['ICA_ROOT_URL']}/ica/projects/{auth_object['project_id']}")
     else:
-        page.locator("#btn-cardstack-table").click()
+        page.locator("#btn-gmprojects-layouttoggle-grid").click()
         time.sleep(1)
         page.wait_for_load_state() # the promise resolves after "load" event.
-        found_project = page.get_by_role("cell", name=f"{auth_object['project_name']}",exact=True).locator("div").count() > 0
+        ### making sure we toggle the project grid to filter to your personal workgroup context
+        page.locator("#combobox-projects-workgroupfilter #toggleButton").click()
+        page.get_by_role("option", name="<Personal>").locator("div").click()
+        found_project = page.get_by_role("gridcell", name=f"{auth_object['project_name']}",exact=True).locator("vaadin-grid-cell-content").count() > 0
         if found_project is True:
-            page.get_by_role("cell", name=f"{auth_object['project_name']}").locator("div").dblclick()
+            page.get_by_role("gridcell", name=f"{auth_object['project_name']}").locator("vaadin-grid-cell-content").dblclick()
             ## Grabbing project URN from project details tab
             logging.debug(f"Grabbing project URN {auth_object['project_name']} to get project id")
             page.get_by_role("button", name="Project Settings").click()
