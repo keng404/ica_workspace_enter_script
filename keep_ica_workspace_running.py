@@ -71,11 +71,17 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode,operating_s
         time.sleep(1)
         page.wait_for_load_state() # the promise resolves after "load" event.
         ### making sure we toggle the project grid to filter to your personal workgroup context
+        #page.locator("#combobox-projects-workgroupfilter #toggleButton").click()
+        page.locator("#combobox-projects-workgroupfilter #clearButton").click()
         page.locator("#combobox-projects-workgroupfilter #toggleButton").click()
         page.get_by_role("option", name="<Personal>").locator("div").click()
-        found_project = page.get_by_role("gridcell", name=f"{auth_object['project_name']}",exact=True).locator("vaadin-grid-cell-content").count() > 0
+        page.locator(".toolbar-spacer").first.click()
+        time.sleep(3)
+        found_project = page.get_by_role("gridcell", name=f"{auth_object['project_name']}",exact=True).count() > 0
+        #print(f"{found_project}")
         if found_project is True:
-            page.get_by_role("gridcell", name=f"{auth_object['project_name']}").locator("vaadin-grid-cell-content").dblclick()
+            page.locator("vaadin-grid-cell-content").filter(has_text=f"{auth_object['project_name']}").dblclick()
+            #page.get_by_role("gridcell", name=f"{auth_object['project_name']}",exact=True).locator("vaadin-grid-cell-content").dblclick()
             ## Grabbing project URN from project details tab
             logging.debug(f"Grabbing project URN {auth_object['project_name']} to get project id")
             page.get_by_role("button", name="Project Settings").click()
