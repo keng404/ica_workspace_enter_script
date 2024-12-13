@@ -31,11 +31,38 @@ def generate_ps_token(auth_object):
     token = None
     try:
         platform_response = requests.post(full_url, headers=headers)
-        token = platform_response.json()['token']
+        pprint(platform_response,indent=4)
+        platform_response = platform_response.json()
+        if 'token' in platform_response.keys():
+            token = platform_response['token']
     except:
         pprint(platform_response,indent=4)
         raise ValueError(f"Could not generate psToken for the following URL: https://{auth_object['domain_name']}.login.illumina.com")
-    return token 
+    return token
+
+# STEP 1A: generate psToken from username and password using platform services --- added for robustness
+def generate_ps_token_v2(application_name,domain_url,credentials):
+    platform_services_url = f"{ os.environ['ILLUMINA_PLATFORM_ROOT_URL']}/platform-services-manager/Session/"
+    headers = CaseInsensitiveDict()
+    headers['accept'] = "application/json"
+    headers['grant_type'] = "password"
+    headers['Authorization'] = f"Basic {credentials}"
+    headers['Content-Type'] = "application/json"
+    data = {
+    'clientId': f"{application_name}",
+    'rURL': f"{domain_url}"
+    }
+    access_token = None
+    try:
+        platform_response = requests.post(platform_services_url, headers=headers,data=json.dumps(data))
+        platform_response = platform_response.json()
+        if 'access_token' in platform_response.keys():
+            access_token = platform_response['access_token']
+    except:
+        pprint(platform_response,indent=4)
+        raise ValueError(f"Could not generate psToken for the following URL: {domain_url}")
+    return access_token  
+
 ## STEP 2, log into ICA, navigate to project, Bench -> Workspaces, identify workspace of interest and enter it.
 def enter_workspace(playwright: Playwright,auth_object,headless_mode,operating_system) -> None:
     browser = playwright.chromium.launch(headless=headless_mode)
@@ -46,6 +73,7 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode,operating_s
     # sign into domain --- platform home
     #page.on("response", handle_response)
     logging.debug(f"Logging into {auth_object['domain_name']} domain")
+
     page.goto(f"https://platform.login.illumina.com/platform-services-manager/?rURL=https://{auth_object['domain_name']}.login.illumina.com/platform-home/&redirectMethod=GET&clientId=ps-home")
     page.locator("#login").click()
     page.locator("#login").fill(f"{auth_object['username']}")
@@ -54,9 +82,15 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode,operating_s
     page.get_by_role("button", name="Sign In").click()
     # click on ICA card
     logging.debug(f"Entering into ICA")
-    page.get_by_role("link", name="Illumina Connected Analytics", exact=True).click()
+    try:
+        page.get_by_role("link", name="Illumina Connected Analytics", exact=True).click()
+    except:
+        logging.debug(f"Directly navigating to ICA")
+        page.goto(f"https://ica.illumina.com/ica")
     page.get_by_text("Cookies", exact=True).click()
     page.get_by_role("button", name="Accept and close").click()
+
+
 
     #page.goto(f"{os.environ['ICA_ROOT_URL']}/ica/projects")
 
@@ -169,12 +203,14 @@ def main():
     parser.add_argument('--workspace_name', default=None,required=True, type=str, help="ICA workspace name")
     parser.add_argument('--project_id', default=None, type=str, help="[OPTIONAL] Connected Analytics project ID")
     parser.add_argument('--project_name', default=None, type=str, help="[OPTIONAL] Connected Analytics project Name to grab project ID")
+    parser.add_argument('--illumina_platform_root_url', default="https://platform.login.illumina.com", type=str, help="Illumina Platform root url. In most use-cases, this option does not need to be configured")
     parser.add_argument('--ica_root_url', default="https://ica.illumina.com", type=str, help="ICA root url. In most use-cases, this option does not need to be configured")
     parser.add_argument('--interactive_mode',  action="store_false", help="run script in interactive mode")
     args, extras = parser.parse_known_args()
     #############
     auth_object = vars(args)
     os.environ['ICA_ROOT_URL'] = args.ica_root_url
+    os.environ['ILLUMINA_PLATFORM_ROOT_URL'] = args.illumina_platform_root_url
     ############ script argument validation
     if auth_object['domain_name'] is None:
         raise ValueError("Private domain name [--domain_name <STR>] need to be provided")
@@ -182,8 +218,18 @@ def main():
         raise ValueError("Both username [--username <STR>] and password [--password <STR>] need to be provided")
     if auth_object['project_id'] is None and auth_object['project_name'] is None:
         raise ValueError("Either project_id [--project_id <STR>] or project_name [--project_name <STR>] need to be provided")
-    ######### Validate username + password combination
+    ######### Validate username + password + domain_name combination by Generating JWT
     ps_token = generate_ps_token(auth_object)
+
+    ### retry generating PS token to validate username + password + domain_name combination
+    domain_url = f"https://{args.domain_name}.login.illumina.com"
+    application_name = "ica"
+    encoded_key = base64.b64encode(bytes(f"{auth_object['username']}:{auth_object['password']}", "utf-8")).decode()
+    if ps_token is None:
+        # STEP 1A: Generate psToken from username and password
+        logging.debug(f" Using Illumina Platform to log into {domain_url}")
+        ps_token = generate_ps_token_v2(application_name,domain_url,encoded_key)
+
     if ps_token is None:
         raise ValueError("Username password combination is incorrect")
     else:
