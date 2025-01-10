@@ -17,9 +17,10 @@ python3 keep_ica_workspace_running.py --domain_name {DOMAIN_NAME} --username {US
 ### Additional notes
 
 - Script will enter running workspace and re-start stopped workspace.
-- ```interactive_mode``` mode flag can be toggled on/off --- this flag turns off headless mode, which is nice if you want to see how the script is navigating in the browser.
+- ```--interactive_mode``` mode flag can be toggled on/off --- this flag turns off headless mode, which is nice if you want to see how the script is navigating in the browser.
 - No checks are done for invalid workspace names. You'll probably encounter a timeout error (30s) if script does not complete.
-- Either ```project_name``` or ```project_id``` can be provided.
+- Either ```--project_name``` or ```--project_id``` can be provided.
+- You can also provide a workgroup name if you are using an ICA project where you have been added via a workgroup. You'll specify the name via the argument ```--workgroup_name```
 
 # install python modules
 

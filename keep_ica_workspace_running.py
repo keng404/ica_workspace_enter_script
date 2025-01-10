@@ -65,6 +65,7 @@ def generate_ps_token_v2(application_name,domain_url,credentials):
 
 ## STEP 2, log into ICA, navigate to project, Bench -> Workspaces, identify workspace of interest and enter it.
 def enter_workspace(playwright: Playwright,auth_object,headless_mode,operating_system) -> None:
+    workgroup_name = auth_object["workgroup_name"]
     browser = playwright.chromium.launch(headless=headless_mode)
     context = browser.new_context()
     context.grant_permissions(["clipboard-read"])
@@ -104,11 +105,15 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode,operating_s
         page.locator("#btn-gmprojects-layouttoggle-grid").click()
         time.sleep(1)
         page.wait_for_load_state() # the promise resolves after "load" event.
-        ### making sure we toggle the project grid to filter to your personal workgroup context
+        ### making sure we toggle the project grid to filter to your personal workgroup context or workgroup context of choice
         #page.locator("#combobox-projects-workgroupfilter #toggleButton").click()
-        page.locator("#combobox-projects-workgroupfilter #clearButton").click()
+        ####
+        project_workgroup_clear_button =  page.locator("#combobox-projects-workgroupfilter #clearButton").count() > 0
+        if project_workgroup_clear_button is True:
+            page.locator("#combobox-projects-workgroupfilter #clearButton").click()
+        ###
         page.locator("#combobox-projects-workgroupfilter #toggleButton").click()
-        page.get_by_role("option", name="<Personal>").locator("div").click()
+        page.get_by_role("option", name=f"{workgroup_name}").locator("div").click()
         page.locator(".toolbar-spacer").first.click()
         time.sleep(3)
         found_project = page.get_by_role("gridcell", name=f"{auth_object['project_name']}",exact=True).count() > 0
@@ -201,6 +206,7 @@ def main():
     parser.add_argument('--password', default=None,required=True, type=str, help="password used to log into Connected Analytics")
     parser.add_argument('--domain_name', default=None,required=True, type=str, help="private domain name")
     parser.add_argument('--workspace_name', default=None,required=True, type=str, help="ICA workspace name")
+    parser.add_argument('--workgroup_name', default="<Personal>", type=str, help="ICA workgroup name")
     parser.add_argument('--project_id', default=None, type=str, help="[OPTIONAL] Connected Analytics project ID")
     parser.add_argument('--project_name', default=None, type=str, help="[OPTIONAL] Connected Analytics project Name to grab project ID")
     parser.add_argument('--illumina_platform_root_url', default="https://platform.login.illumina.com", type=str, help="Illumina Platform root url. In most use-cases, this option does not need to be configured")
