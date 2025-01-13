@@ -6,7 +6,7 @@ This is demo code and should not be considered official code from Illumina.
 
 Currently this allows for users to keep workspaces active (i.e. permanent workspaces) for their activity within ICA.
 
-You can also try running the script in the docker image ```keng404/ica_workspace_enter_script:0.0.2```.
+You can also try running the script in the docker image ```keng404/ica_workspace_enter_script:0.0.3```.
 
 ## Command line usage
 
