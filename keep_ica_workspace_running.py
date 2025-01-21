@@ -105,16 +105,20 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode,operating_s
         page.locator("#btn-gmprojects-layouttoggle-grid").click()
         time.sleep(1)
         page.wait_for_load_state() # the promise resolves after "load" event.
+        ### forgo workgroup selection and directly search for project of interest
         ### making sure we toggle the project grid to filter to your personal workgroup context or workgroup context of choice
         #page.locator("#combobox-projects-workgroupfilter #toggleButton").click()
         ####
-        project_workgroup_clear_button =  page.locator("#combobox-projects-workgroupfilter #clearButton").count() > 0
-        if project_workgroup_clear_button is True:
-            page.locator("#combobox-projects-workgroupfilter #clearButton").click()
+        #project_workgroup_clear_button =  page.locator("#combobox-projects-workgroupfilter #clearButton").count() > 0
+        #if project_workgroup_clear_button is True:
+        #    page.locator("#combobox-projects-workgroupfilter #clearButton").click()
         ###
-        page.locator("#combobox-projects-workgroupfilter #toggleButton").click()
-        page.get_by_role("option", name=f"{workgroup_name}").locator("div").click()
-        page.locator(".toolbar-spacer").first.click()
+        #page.locator("#combobox-projects-workgroupfilter #toggleButton").click()
+        #page.get_by_role("option", name=f"{workgroup_name}").locator("div").click()
+        #page.locator(".toolbar-spacer").first.click()
+        #############
+        page.locator("#textfield-searchfield").locator("input").fill(f"{auth_object['project_name']}")
+        page.locator("#textfield-searchfield").press("Enter")
         time.sleep(3)
         found_project = page.get_by_role("gridcell", name=f"{auth_object['project_name']}",exact=True).count() > 0
         #print(f"{found_project}")
