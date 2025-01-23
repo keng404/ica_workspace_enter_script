@@ -36,6 +36,7 @@ def generate_ps_token(auth_object):
         if 'token' in platform_response.keys():
             token = platform_response['token']
     except:
+        platform_response = requests.post(full_url, headers=headers)
         pprint(platform_response,indent=4)
         raise ValueError(f"Could not generate psToken for the following URL: https://{auth_object['domain_name']}.login.illumina.com")
     return token
@@ -59,6 +60,7 @@ def generate_ps_token_v2(application_name,domain_url,credentials):
         if 'access_token' in platform_response.keys():
             access_token = platform_response['access_token']
     except:
+        platform_response = requests.post(platform_services_url, headers=headers,data=json.dumps(data))
         pprint(platform_response,indent=4)
         raise ValueError(f"Could not generate psToken for the following URL: {domain_url}")
     return access_token  
