@@ -1,0 +1,2 @@
+FROM keng404/ica_workspace_enter_script:0.0.2
+COPY keep_ica_workspace_running.py /opt/
