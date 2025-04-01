@@ -119,13 +119,17 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode,operating_s
         #page.get_by_role("option", name=f"{workgroup_name}").locator("div").click()
         #page.locator(".toolbar-spacer").first.click()
         #############
+        logging.debug(f"Searching ICA projects table")
+
         page.locator("#textfield-searchfield").locator("input").fill(f"{auth_object['project_name']}")
         page.locator("#textfield-searchfield").press("Enter")
         time.sleep(3)
         found_project = page.get_by_role("gridcell", name=f"{auth_object['project_name']}",exact=True).count() > 0
         #print(f"{found_project}")
         if found_project is True:
-            page.locator("vaadin-grid-cell-content").filter(has_text=f"{auth_object['project_name']}").dblclick()
+            logging.debug(f"Found project {auth_object['project_name']}")
+            #page.locator("vaadin-grid-cell-content").filter(has_text=f"{auth_object['project_name']}").dblclick()
+            page.locator("vaadin-grid-cell-content").get_by_text(f"{auth_object['project_name']}",exact=True).dblclick()
             #page.get_by_role("gridcell", name=f"{auth_object['project_name']}",exact=True).locator("vaadin-grid-cell-content").dblclick()
             ## Grabbing project URN from project details tab
             logging.debug(f"Grabbing project URN {auth_object['project_name']} to get project id")
@@ -150,40 +154,57 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode,operating_s
     ### enter workspaces of project
     #page.on("response", handle_response)
     page.goto(f"{os.environ['ICA_ROOT_URL']}/ica/projects/{auth_object['project_id']}/workspaces")
-    page.locator("#cardstackandmasterdetaillayout-toggle-TABLE").get_by_role("button").click()
+    logging.debug(f"Navigating to {os.environ['ICA_ROOT_URL']}/ica/projects/{auth_object['project_id']}/workspaces")
+    logging.debug(f"Searching workspaces table")
+
+    page.locator("#btn-gmprojectworkspaces-layouttoggle-grid").click()
+    #page.locator("#cardstackandmasterdetaillayout-toggle-TABLE").get_by_role("button").click()
     time.sleep(1)
-    found_workspace = page.get_by_role("cell",name=f"{auth_object['workspace_name']}",exact=True).count() > 0
+    page.locator("#textfield-searchfield").locator("input").fill(f"{auth_object['workspace_name']}")
+    page.locator("#textfield-searchfield").press("Enter")
+    time.sleep(3)
+    found_workspace = page.get_by_role("gridcell",name=f"{auth_object['workspace_name']}",exact=True).count() > 0
     if found_workspace is True:
-        page.get_by_role("cell",name=f"{auth_object['workspace_name']}",exact=True).click(click_count=2)
-        page.get_by_label("Details").get_by_text("Details").click(click_count=2)
+        logging.debug(f"Found workspace {auth_object['workspace_name']}")
+        #page.get_by_role("gridcell",name=f"{auth_object['workspace_name']}",exact=True).click(click_count=2)
+        #page.locator("vaadin-grid-cell-content").filter(has_text=f"{auth_object['workspace_name']}").dblclick()
+        page.locator("vaadin-grid-cell-content").get_by_text(f"{auth_object['workspace_name']}",exact=True).dblclick()
+        time.sleep(3)
+        page.get_by_role("tab",name="Details").click(click_count=2)
+        #page.get_by_label("Details").get_by_text("Details").click(click_count=2)
         page.get_by_label("Status").click(click_count=2)
         if operating_system == "Mac":
             ### only valid for MacOs -- need to adapt for windows
-            page.locator(".v-panel-content").press("Meta+c")
+            #page.locator(".v-panel-content").press("Meta+c")
+            page.get_by_label("Status").press("Meta+c")
         else:
-            page.locator(".v-panel-content").press("Control+c")
+            #page.locator(".v-panel-content").press("Control+c")
+            page.get_by_label("Status").press("Control+c")
         workspace_status = page.evaluate("navigator.clipboard.readText()")
         logging.debug(f"Workspace Name: {auth_object['workspace_name']} Status: {workspace_status}")
         if workspace_status == "Running":
             ## keep running workspace running
-            page.get_by_role("button", name=" Back").click()
-            page.get_by_role("button", name=" Keep running").click()
+            page.get_by_role("button", name="Back").click()
+            page.get_by_role("button", name="Keep running").click()
             logging.debug(f"Logged into running workspace {auth_object['workspace_name']}")
         elif workspace_status == "Stopped":
             ## keep re-start a stopped workspace
             time.sleep(1)
-            page.get_by_role("button", name=" Start Workspace").click(click_count=3)
+            page.get_by_role("button", name="Start").click(click_count=3)
             time.sleep(3)
             #### let's check the workspace has restarted
-            page.get_by_label("Details").get_by_text("Details").click(click_count=2)
+            #page.get_by_label("Details").get_by_text("Details").click(click_count=2)
+            page.get_by_role("tab",name="Details").click(click_count=2)
             page.get_by_label("Status").click(click_count=2)
             if operating_system == "Mac":
                 ### only valid for MacOs -- need to adapt for windows
-                page.locator(".v-panel-content").press("Meta+c")
+                #page.locator(".v-panel-content").press("Meta+c")
+                page.get_by_label("Status").press("Meta+c")
             else:
-                page.locator(".v-panel-content").press("Control+c")
+                #page.locator(".v-panel-content").press("Control+c")
+                page.get_by_label("Status").press("Control+c")
             workspace_status = page.evaluate("navigator.clipboard.readText()")
-            page.get_by_role("button", name=" Back").click()
+            page.get_by_role("button", name="Back").click()
             if workspace_status == "Starting":
                 logging.debug(f"Restarted workspace {auth_object['workspace_name']}\nYou may need to wait a few minutes before entering into it.")
             else:
