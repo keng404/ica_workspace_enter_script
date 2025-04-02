@@ -184,6 +184,7 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode,operating_s
         logging.debug(f"Workspace Name: {auth_object['workspace_name']} Status: {workspace_status}")
         if workspace_status == "Running":
             ## keep running workspace running
+            page.get_by_role("tab",name="Access").click(click_count=2)
             time.sleep(5)
             page.get_by_role("button", name="Back").click()
             time.sleep(1)
