@@ -184,7 +184,9 @@ def enter_workspace(playwright: Playwright,auth_object,headless_mode,operating_s
         logging.debug(f"Workspace Name: {auth_object['workspace_name']} Status: {workspace_status}")
         if workspace_status == "Running":
             ## keep running workspace running
+            time.sleep(1)
             page.get_by_role("button", name="Back").click()
+            time.sleep(3)
             page.get_by_role("button", name="Keep running").click()
             logging.debug(f"Logged into running workspace {auth_object['workspace_name']}")
         elif workspace_status == "Stopped":
